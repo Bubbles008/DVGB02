@@ -53,7 +53,6 @@ void B_input(struct pkt packet) {
     tolayer3(B, last_ack_pkt);
     return;
 }
-        //////////////////////////////////seqnum???
 if(packet.seqnum == expected_seq) {
   tolayer5(B, packet.payload);
 
