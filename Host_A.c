@@ -79,7 +79,7 @@ void A_input(struct pkt packet) {
 
 /* Called when A's timer goes off */
 void A_timerinterrupt() {
-  printf(MAGENTA "Timeout." END CYAN" Packet is being resend.\n" END);
+  printf(MAGENTA "Timeout." END CYAN" Packet is being resent.\n" END);
   tolayer3(A, last_packet);
   starttimer(A, 15.0);
 }  

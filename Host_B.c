@@ -31,6 +31,7 @@ static int is_corrupt(struct pkt packet){
   return packet.checksum != compute_checksum(packet);
 }
 
+/*Help function to create ACK-packet to send to host A*/
 static struct pkt make_ack(int acknum){
   struct pkt ack;
   memset(&ack, 0, sizeof(ack));
@@ -63,7 +64,7 @@ if(packet.seqnum == expected_seq) {
   return;
 
 }
-
+/*When checksum is OK but not expected seq send last ack again*/
 tolayer3(B, last_ack_pkt);
 }
 
