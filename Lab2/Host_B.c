@@ -30,7 +30,8 @@ static int compute_checksum(struct pkt packet){
 static int is_corrupt(struct pkt packet){
   return packet.checksum != compute_checksum(packet);
 }
- //////////////////////////////////////////////////////////
+
+/*Help function to create ACK-packet to send to host A*/
 static struct pkt make_ack(int acknum){
   struct pkt ack;
   memset(&ack, 0, sizeof(ack));
@@ -39,9 +40,6 @@ static struct pkt make_ack(int acknum){
   ack.checksum = compute_checksum(ack);
   return ack;
 }
- //////////////////////////////////////////////////////////
-
-
 
 
 /* Called from layer 5, passed the data to be sent to other side */
@@ -56,7 +54,6 @@ void B_input(struct pkt packet) {
     tolayer3(B, last_ack_pkt);
     return;
 }
-        //////////////////////////////////seqnum???
 if(packet.seqnum == expected_seq) {
   tolayer5(B, packet.payload);
 
@@ -67,7 +64,7 @@ if(packet.seqnum == expected_seq) {
   return;
 
 }
-
+/*When checksum is OK but not expected seq send last ack again*/
 tolayer3(B, last_ack_pkt);
 }
 
