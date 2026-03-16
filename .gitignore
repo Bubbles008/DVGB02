@@ -1,1 +1,6 @@
+# Compiled C files
+*.o
+sim
+
+# Mac system files
 .DS_Store
