@@ -1,88 +1,57 @@
 #include "node.h"
+#include "sim_engine.h"
+#include <stdio.h>
 
 #define INF 999
 
+
+static int link_cost[4][4];
+
 void rtinit(struct distance_table *table, int node) {
+    for (int i = 0; i < 4; i++)
+        link_cost[node][i] = table->costs[node][i];
 
-	int mincost[4];
-	for( int i = 0; i < 4; i++){
-		mincost[i] = table->costs[node][i];
-	}
-
-	
-	/*Create packet*/
-	struct rtpkt pkt;
-	pkt.sourceid = node; 
-
-	/*Copy minimum cost to packet*/
-	for(int i= 0; i < 4; i++){
-		pkt.mincost[i] = mincost[i];
-	}
-
-	/*Send to neighbors*/
-	for(int i = 0; i < 4; i++){
-		if (is_neighbor(node, i) && i != node) {
-			pkt.destid = i;
-			tolayer2(pkt);
-		}
-	}
-
-	printdt(table, node);
-}
-
-
-void rtupdate(struct distance_table *table, int node, struct rtpkt *pkt) {
-
-    int changeDetected = 0;
-    int src = pkt->sourceid;
-
-
-    int costToSrc = table->costs[src][node];
-
-
-    for(int i = 0; i < 4; i++)  // i = destination
-    {
-        int newcost = costToSrc + pkt->mincost[i];
-
-        if(newcost < table->costs[i][src])
-        {
-            table->costs[i][src] = newcost;
-            changeDetected = 1;
-        }
-    }
-
-    if(changeDetected)
-    {
-        struct rtpkt outpkt;
-        outpkt.sourceid = node;
-
-        int best[4];
-
-        for(int d = 0; d < 4; d++)
-        {
-            int min = table->costs[d][0];
-
-            for(int v = 1; v < 4; v++)
-            {
-                if(table->costs[d][v] < min)
-                    min = table->costs[d][v];
-            }
-
-            best[d] = min;
-            outpkt.mincost[d] = min;
-        }
-
-        for(int n = 0; n < 4; n++)
-        {
-            if(is_neighbor(node, n))
-            {
-                outpkt.destid = n;
-                tolayer2(outpkt);
-            }
-        }
+    for (int neighbor = 0; neighbor < 4; neighbor++) {
+        if (neighbor == node) continue;
+        if (!is_neighbor(node, neighbor)) continue;
+        struct rtpkt pkt;
+        creatertpkt(&pkt, node, neighbor, table->costs[node]);
+        tolayer2(pkt);
     }
 
     printdt(table, node);
 }
 
+void rtupdate(struct distance_table *table, int node, struct rtpkt *pkt) {
+    int sender = pkt->sourceid;
+    int improved = 0;
 
+    for (int dest = 0; dest < 4; dest++)
+        table->costs[sender][dest] = pkt->mincost[dest];
+
+    for (int dest = 0; dest < 4; dest++) {
+        int best = INF;
+        for (int neighbor = 0; neighbor < 4; neighbor++) {
+            if (!is_neighbor(node, neighbor)) continue;
+            int cost = link_cost[node][neighbor] + table->costs[neighbor][dest];
+            if (cost > INF) cost = INF;
+            if (cost < best) best = cost;
+        }
+        if (best < table->costs[node][dest]) {
+            table->costs[node][dest] = best;
+            improved = 1;
+        }
+    }
+
+    if (improved) {
+        for (int neighbor = 0; neighbor < 4; neighbor++) {
+            if (neighbor == node) continue;
+            if (!is_neighbor(node, neighbor)) continue;
+            struct rtpkt out_pkt;
+            creatertpkt(&out_pkt, node, neighbor, table->costs[node]);
+            tolayer2(out_pkt);
+        }
+    }
+
+    printdt(table, node);
+}
